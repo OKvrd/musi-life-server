@@ -1,6 +1,6 @@
+import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import yt_dlp
 
 app = Flask(__name__)
 CORS(app)
@@ -11,30 +11,26 @@ def convert_audio():
     if not youtube_url:
         return jsonify({'error': 'Falta el enlace'}), 400
     
-    try:
-        ydl_opts = {
-            'format': 'bestaudio',
-            'noplaylist': True,
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['tv_embedded', 'mweb']
-                }
-            },
-            'quiet': True
-        }
+    # Extraer el ID del video de YouTube de forma segura
+    video_id = None
+    if "v=" in youtube_url:
+        video_id = youtube_url.split("v=")[1].split("&")[0]
+    elif "youtu.be/" in youtube_url:
+        video_id = youtube_url.split("youtu.be/")[1].split("?")[0]
         
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(youtube_url, download=False)
-            audio_url = info.get('url')
-            if not audio_url and 'formats' in info:
-                for f in info['formats']:
-                    if f.get('url') and f.get('acodec') != 'none':
-                        audio_url = f['url']
-                        break
-                        
-        if not audio_url:
+    if not video_id:
+        return jsonify({'error': 'URL inválida'}), 400
+        
+    try:
+        # Consultar la API pública de Piped para obtener el stream de audio directo
+        response = requests.get(f"https://pipedapi.kavin.rocks/streams/{video_id}", timeout=10)
+        data = response.json()
+        
+        audio_streams = [s for s in data.get('audioStreams', []) if s.get('url')]
+        if not audio_streams:
             return jsonify({'error': 'No se pudo extraer el audio'}), 500
             
+        audio_url = audio_streams[0]['url']
         return jsonify({'url': audio_url})
         
     except Exception as e:
