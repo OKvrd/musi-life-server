@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import subprocess
+import yt_dlp
 
 app = Flask(__name__)
 CORS(app)
@@ -12,21 +12,26 @@ def convert_audio():
         return jsonify({'error': 'Falta el enlace'}), 400
     
     try:
-        # Comando actualizado con cliente de Android/Web para evitar bloqueos y 50s de timeout
-        cmd = [
-            'yt-dlp', 
-            '--extractor-args', 'youtube:player_client=android,web', 
-            '-g', 
-            '-f', 'bestaudio', 
-            youtube_url
-        ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=50)
+        ydl_opts = {
+            'format': 'bestaudio',
+            'noplaylist': True,
+            'extractor_args': {
+                'youtube': {
+                    'player-client': ['mweb', 'android', 'web']
+                }
+            },
+            'quiet': True
+        }
         
-        if result.returncode != 0:
-            return jsonify({'error': 'No se pudo extraer el audio'}), 500
-            
-        audio_url = result.stdout.strip().split('\n')[0]
-        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(youtube_url, download=False)
+            audio_url = info.get('url')
+            if not audio_url and 'formats' in info:
+                for f in info['formats']:
+                    if f.get('url') and f.get('acodec') != 'none':
+                        audio_url = f['url']
+                        break
+                        
         if not audio_url:
             return jsonify({'error': 'No se pudo extraer el audio'}), 500
             
@@ -37,3 +42,4 @@ def convert_audio():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
