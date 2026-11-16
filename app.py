@@ -17,7 +17,7 @@ def convert_audio():
             'noplaylist': True,
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android']
+                    'player_client': ['ios']
                 }
             },
             'quiet': True
@@ -42,5 +42,3 @@ def convert_audio():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-
-
