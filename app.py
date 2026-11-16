@@ -13,7 +13,7 @@ def convert_audio():
 
     try:
         cmd = ['yt-dlp', '-g', '-f', 'bestaudio', youtube_url]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=50)
         
         audio_url = result.stdout.strip().split('\n')[0]
         
