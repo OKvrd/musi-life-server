@@ -17,7 +17,7 @@ def convert_audio():
             'noplaylist': True,
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['ios']
+                    'player_client': ['tv_embedded', 'mweb']
                 }
             },
             'quiet': True
